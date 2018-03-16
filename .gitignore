@@ -6,7 +6,7 @@ TODO.md
 docs/_build
 
 # glide
-vendor/
+#vendor/
 
 # Build artifacts
 build/
