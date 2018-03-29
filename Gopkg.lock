@@ -275,6 +275,17 @@
   revision = "1f52c6f8b8a5c7908aff4497c186af344b428925"
 
 [[projects]]
+  name = "github.com/tendermint/ethermint"
+  packages = [
+    "cmd/utils",
+    "ethereum",
+    "types",
+    "version"
+  ]
+  revision = "e7c9e10bea001cb8899f78ad72835986e8e50058"
+  version = "v0.5.4"
+
+[[projects]]
   name = "github.com/tendermint/go-crypto"
   packages = ["."]
   revision = "b4f04f196cd719660e43b91202cd60d9a95b1837"
@@ -445,6 +456,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9a606d7ddf75a4e299656ee70e9fd6e66b70d5f620c3d7d3059b6086878df257"
+  inputs-digest = "93d2db6e4cb9c8551d721ceb02d4ceb8b574f35dfb1f0add7968d8245aa4d316"
   solver-name = "gps-cdcl"
   solver-version = 1
