@@ -19,9 +19,9 @@ import (
 
 	cmn "github.com/tendermint/tmlibs/common"
 
-	abciApp "github.com/tendermint/ethermint/app"
-	emtUtils "github.com/tendermint/ethermint/cmd/utils"
-	"github.com/tendermint/ethermint/ethereum"
+	abciApp "ethermint/app"
+	emtUtils "ethermint/cmd/utils"
+	"ethermint/ethereum"
 )
 
 func ethermintCmd(ctx *cli.Context) error {
@@ -31,7 +31,7 @@ func ethermintCmd(ctx *cli.Context) error {
 
 	// Step 2: If we can invoke `tendermint node`, let's do so
 	// in order to make ethermint as self contained as possible.
-	// See Issue https://github.com/tendermint/ethermint/issues/244
+	// See Issue https://ethermint/issues/244
 	canInvokeTendermintNode := canInvokeTendermint(ctx)
 	if canInvokeTendermintNode {
 		tendermintHome := tendermintHomeFromEthermint(ctx)
