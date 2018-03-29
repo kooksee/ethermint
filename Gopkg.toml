@@ -27,7 +27,8 @@
 
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  branch = "master"
+  version = "1.8.0"
+#  branch = "master"
 #  source = "https://github.com/tendermint/go-ethereum.git"
 #  source = "https://github.com/ethereum/go-ethereum.git"
 
