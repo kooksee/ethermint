@@ -27,7 +27,8 @@
 
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  source = "https://github.com/tendermint/go-ethereum.git"
+#  source = "https://github.com/tendermint/go-ethereum.git"
+  source = "https://github.com/ethereum/go-ethereum.git"
 
 [[constraint]]
   name = "github.com/mattn/go-colorable"
