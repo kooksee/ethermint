@@ -330,7 +330,7 @@ func escapeString(s string) string {
 			needsEscape = true
 		}
 	}
-	if !needsEscape && !needsQuotes {
+	if needsEscape == false && needsQuotes == false {
 		return s
 	}
 	e := stringBufPool.Get().(*bytes.Buffer)

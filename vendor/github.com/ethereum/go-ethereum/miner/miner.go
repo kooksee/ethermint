@@ -42,6 +42,10 @@ type Backend interface {
 	ChainDb() ethdb.Database
 }
 
+type Pending interface {
+	Pending() (*types.Block, *state.StateDB)
+}
+
 // Miner creates blocks and searches for proof-of-work values.
 type Miner struct {
 	mux *event.TypeMux
@@ -105,7 +109,8 @@ out:
 
 func (self *Miner) Start(coinbase common.Address) {
 	atomic.StoreInt32(&self.shouldStart, 1)
-	self.SetEtherbase(coinbase)
+	self.worker.setEtherbase(coinbase)
+	self.coinbase = coinbase
 
 	if atomic.LoadInt32(&self.canStart) == 0 {
 		log.Info("Network syncing, will start miner afterwards")

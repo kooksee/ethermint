@@ -163,14 +163,13 @@ func (a *RemoteAgent) SubmitWork(nonce types.BlockNonce, mixDigest, hash common.
 }
 
 // loop monitors mining events on the work and quit channels, updating the internal
-// state of the remote miner until a termination is requested.
+// state of the rmeote miner until a termination is requested.
 //
 // Note, the reason the work and quit channels are passed as parameters is because
 // RemoteAgent.Start() constantly recreates these channels, so the loop code cannot
 // assume data stability in these member fields.
 func (a *RemoteAgent) loop(workCh chan *Work, quitCh chan struct{}) {
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
+	ticker := time.Tick(5 * time.Second)
 
 	for {
 		select {
@@ -180,7 +179,7 @@ func (a *RemoteAgent) loop(workCh chan *Work, quitCh chan struct{}) {
 			a.mu.Lock()
 			a.currentWork = work
 			a.mu.Unlock()
-		case <-ticker.C:
+		case <-ticker:
 			// cleanup
 			a.mu.Lock()
 			for hash, work := range a.work {

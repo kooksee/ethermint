@@ -119,6 +119,21 @@ func isHexNum(t reflect.Type) bool {
 	return t == bigIntType
 }
 
+var blockNumberType = reflect.TypeOf((*BlockNumber)(nil)).Elem()
+
+// Indication if the given block is a BlockNumber
+func isBlockNumber(t reflect.Type) bool {
+	if t == nil {
+		return false
+	}
+
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	return t == blockNumberType
+}
+
 // suitableCallbacks iterates over the methods of the given type. It will determine if a method satisfies the criteria
 // for a RPC callback or a subscription callback and adds it to the collection of callbacks or subscriptions. See server
 // documentation for a summary of these criteria.
@@ -195,12 +210,18 @@ METHODS:
 		}
 
 		switch mtype.NumOut() {
-		case 0, 1, 2:
-			if mtype.NumOut() == 2 && h.errPos == -1 { // method must one return value and 1 error
+		case 0, 1:
+			break
+		case 2:
+			if h.errPos == -1 { // method must one return value and 1 error
 				continue METHODS
 			}
-			callbacks[mname] = &h
+			break
+		default:
+			continue METHODS
 		}
+
+		callbacks[mname] = &h
 	}
 
 	return callbacks, subscriptions

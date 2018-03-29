@@ -22,7 +22,6 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -67,10 +66,6 @@ func (fs *Filters) Install(watcher *Filter) (string, error) {
 
 	if fs.watchers[id] != nil {
 		return "", fmt.Errorf("failed to generate unique ID")
-	}
-
-	if watcher.expectsSymmetricEncryption() {
-		watcher.SymKeyHash = crypto.Keccak256Hash(watcher.KeySym)
 	}
 
 	fs.watchers[id] = watcher
@@ -124,9 +119,7 @@ func (fs *Filters) NotifyWatchers(env *Envelope, p2pMessage bool) {
 
 		if match && msg != nil {
 			log.Trace("processing message: decrypted", "hash", env.Hash().Hex())
-			if watcher.Src == nil || IsPubKeyEqual(msg.Src, watcher.Src) {
-				watcher.Trigger(msg)
-			}
+			watcher.Trigger(msg)
 		}
 	}
 }
@@ -179,6 +172,9 @@ func (f *Filter) MatchMessage(msg *ReceivedMessage) bool {
 	if f.PoW > 0 && msg.PoW < f.PoW {
 		return false
 	}
+	if f.Src != nil && !IsPubKeyEqual(msg.Src, f.Src) {
+		return false
+	}
 
 	if f.expectsAsymmetricEncryption() && msg.isAsymmetricEncryption() {
 		return IsPubKeyEqual(&f.KeyAsym.PublicKey, msg.Dst) && f.MatchTopic(msg.Topic)
@@ -216,12 +212,8 @@ func (f *Filter) MatchTopic(topic TopicType) bool {
 }
 
 func matchSingleTopic(topic TopicType, bt []byte) bool {
-	if len(bt) > TopicLength {
-		bt = bt[:TopicLength]
-	}
-
-	if len(bt) < TopicLength {
-		return false
+	if len(bt) > 4 {
+		bt = bt[:4]
 	}
 
 	for j, b := range bt {

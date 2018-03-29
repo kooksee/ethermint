@@ -29,7 +29,11 @@ import (
 	"gopkg.in/fatih/set.v0"
 )
 
-const MetadataApi = "rpc"
+const (
+	notificationBufferSize = 10000 // max buffered notifications before codec is closed
+
+	MetadataApi = "rpc"
+)
 
 // CodecOption specifies which type of messages this codec supports
 type CodecOption int
@@ -45,9 +49,10 @@ const (
 // NewServer will create a new server instance with no registered handlers.
 func NewServer() *Server {
 	server := &Server{
-		services: make(serviceRegistry),
-		codecs:   set.New(),
-		run:      1,
+		services:      make(serviceRegistry),
+		subscriptions: make(subscriptionRegistry),
+		codecs:        set.New(),
+		run:           1,
 	}
 
 	// register a default service which will provide meta information about the RPC service such as the services and
@@ -119,6 +124,16 @@ func (s *Server) RegisterName(name string, rcvr interface{}) error {
 	return nil
 }
 
+// hasOption returns true if option is included in options, otherwise false
+func hasOption(option CodecOption, options []CodecOption) bool {
+	for _, o := range options {
+		if option == o {
+			return true
+		}
+	}
+	return false
+}
+
 // serveRequest will reads requests from the codec, calls the RPC callback and
 // writes the response to the given codec.
 //
@@ -133,11 +148,13 @@ func (s *Server) serveRequest(codec ServerCodec, singleShot bool, options CodecO
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
-			log.Error(string(buf))
+			log.Error(fmt.Sprint(string(buf)))
 		}
 		s.codecsMu.Lock()
 		s.codecs.Remove(codec)
 		s.codecsMu.Unlock()
+
+		return
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -229,7 +246,7 @@ func (s *Server) ServeSingleRequest(codec ServerCodec, options CodecOption) {
 // close all codecs which will cancel pending requests/subscriptions.
 func (s *Server) Stop() {
 	if atomic.CompareAndSwapInt32(&s.run, 1, 0) {
-		log.Debug("RPC Server shutdown initiatied")
+		log.Debug(fmt.Sprint("RPC Server shutdown initiatied"))
 		s.codecsMu.Lock()
 		defer s.codecsMu.Unlock()
 		s.codecs.Each(func(c interface{}) bool {
@@ -421,7 +438,7 @@ func (s *Server) readRequest(codec ServerCodec) ([]*serverRequest, bool, Error) 
 					}
 				}
 			} else {
-				requests[i] = &serverRequest{id: r.id, err: &methodNotFoundError{r.service, r.method}}
+				requests[i] = &serverRequest{id: r.id, err: &methodNotFoundError{r.method, r.method}}
 			}
 			continue
 		}

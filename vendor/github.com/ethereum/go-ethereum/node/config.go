@@ -35,7 +35,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/discover"
 )
 
-const (
+var (
 	datadirPrivateKey      = "nodekey"            // Path within the datadir to the node's private key
 	datadirDefaultKeyStore = "keystore"           // Path within the datadir to the keystore
 	datadirStaticNodes     = "static-nodes.json"  // Path within the datadir to the static node list
@@ -105,15 +105,6 @@ type Config struct {
 	// useless for custom HTTP clients.
 	HTTPCors []string `toml:",omitempty"`
 
-	// HTTPVirtualHosts is the list of virtual hostnames which are allowed on incoming requests.
-	// This is by default {'localhost'}. Using this prevents attacks like
-	// DNS rebinding, which bypasses SOP by simply masquerading as being within the same
-	// origin. These attacks do not utilize CORS, since they are not cross-domain.
-	// By explicitly checking the Host-header, the server will not allow requests
-	// made against the server with a malicious host domain.
-	// Requests using ip address directly are not affected
-	HTTPVirtualHosts []string `toml:",omitempty"`
-
 	// HTTPModules is a list of API modules to expose via the HTTP RPC interface.
 	// If the module list is empty, all RPC API endpoints designated public will be
 	// exposed.
@@ -137,16 +128,6 @@ type Config struct {
 	// If the module list is empty, all RPC API endpoints designated public will be
 	// exposed.
 	WSModules []string `toml:",omitempty"`
-
-	// WSExposeAll exposes all API modules via the WebSocket RPC interface rather
-	// than just the public ones.
-	//
-	// *WARNING* Only set this if the node is running in a trusted network, exposing
-	// private APIs to untrusted users is a major security risk.
-	WSExposeAll bool `toml:",omitempty"`
-
-	// Logger is a custom logger to use with the p2p.Server.
-	Logger log.Logger `toml:",omitempty"`
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into
@@ -179,7 +160,7 @@ func (c *Config) NodeDB() string {
 	if c.DataDir == "" {
 		return "" // ephemeral
 	}
-	return c.resolvePath(datadirNodeDatabase)
+	return c.resolvePath("nodes")
 }
 
 // DefaultIPCEndpoint returns the IPC path used by default.
@@ -335,8 +316,8 @@ func (c *Config) StaticNodes() []*discover.Node {
 	return c.parsePersistentNodes(c.resolvePath(datadirStaticNodes))
 }
 
-// TrustedNodes returns a list of node enode URLs configured as trusted nodes.
-func (c *Config) TrustedNodes() []*discover.Node {
+// TrusterNodes returns a list of node enode URLs configured as trusted nodes.
+func (c *Config) TrusterNodes() []*discover.Node {
 	return c.parsePersistentNodes(c.resolvePath(datadirTrustedNodes))
 }
 
@@ -372,43 +353,35 @@ func (c *Config) parsePersistentNodes(path string) []*discover.Node {
 	return nodes
 }
 
-// AccountConfig determines the settings for scrypt and keydirectory
-func (c *Config) AccountConfig() (int, int, string, error) {
+func makeAccountManager(conf *Config) (*accounts.Manager, string, error) {
 	scryptN := keystore.StandardScryptN
 	scryptP := keystore.StandardScryptP
-	if c.UseLightweightKDF {
+	if conf.UseLightweightKDF {
 		scryptN = keystore.LightScryptN
 		scryptP = keystore.LightScryptP
 	}
 
 	var (
-		keydir string
-		err    error
+		keydir    string
+		ephemeral string
+		err       error
 	)
 	switch {
-	case filepath.IsAbs(c.KeyStoreDir):
-		keydir = c.KeyStoreDir
-	case c.DataDir != "":
-		if c.KeyStoreDir == "" {
-			keydir = filepath.Join(c.DataDir, datadirDefaultKeyStore)
+	case filepath.IsAbs(conf.KeyStoreDir):
+		keydir = conf.KeyStoreDir
+	case conf.DataDir != "":
+		if conf.KeyStoreDir == "" {
+			keydir = filepath.Join(conf.DataDir, datadirDefaultKeyStore)
 		} else {
-			keydir, err = filepath.Abs(c.KeyStoreDir)
+			keydir, err = filepath.Abs(conf.KeyStoreDir)
 		}
-	case c.KeyStoreDir != "":
-		keydir, err = filepath.Abs(c.KeyStoreDir)
-	}
-	return scryptN, scryptP, keydir, err
-}
-
-func makeAccountManager(conf *Config) (*accounts.Manager, string, error) {
-	scryptN, scryptP, keydir, err := conf.AccountConfig()
-	var ephemeral string
-	if keydir == "" {
+	case conf.KeyStoreDir != "":
+		keydir, err = filepath.Abs(conf.KeyStoreDir)
+	default:
 		// There is no datadir.
 		keydir, err = ioutil.TempDir("", "go-ethereum-keystore")
 		ephemeral = keydir
 	}
-
 	if err != nil {
 		return nil, "", err
 	}
@@ -420,17 +393,10 @@ func makeAccountManager(conf *Config) (*accounts.Manager, string, error) {
 		keystore.NewKeyStore(keydir, scryptN, scryptP),
 	}
 	if !conf.NoUSB {
-		// Start a USB hub for Ledger hardware wallets
 		if ledgerhub, err := usbwallet.NewLedgerHub(); err != nil {
 			log.Warn(fmt.Sprintf("Failed to start Ledger hub, disabling: %v", err))
 		} else {
 			backends = append(backends, ledgerhub)
-		}
-		// Start a USB hub for Trezor hardware wallets
-		if trezorhub, err := usbwallet.NewTrezorHub(); err != nil {
-			log.Warn(fmt.Sprintf("Failed to start Trezor hub, disabling: %v", err))
-		} else {
-			backends = append(backends, trezorhub)
 		}
 	}
 	return accounts.NewManager(backends...), ephemeral, nil

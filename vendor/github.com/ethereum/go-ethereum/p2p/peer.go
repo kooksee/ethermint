@@ -25,18 +25,15 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (
-	baseProtocolVersion    = 5
+	baseProtocolVersion    = 4
 	baseProtocolLength     = uint64(16)
 	baseProtocolMaxMsgSize = 2 * 1024
-
-	snappyProtocolVersion = 5
 
 	pingInterval = 15 * time.Second
 )
@@ -63,38 +60,6 @@ type protoHandshake struct {
 	Rest []rlp.RawValue `rlp:"tail"`
 }
 
-// PeerEventType is the type of peer events emitted by a p2p.Server
-type PeerEventType string
-
-const (
-	// PeerEventTypeAdd is the type of event emitted when a peer is added
-	// to a p2p.Server
-	PeerEventTypeAdd PeerEventType = "add"
-
-	// PeerEventTypeDrop is the type of event emitted when a peer is
-	// dropped from a p2p.Server
-	PeerEventTypeDrop PeerEventType = "drop"
-
-	// PeerEventTypeMsgSend is the type of event emitted when a
-	// message is successfully sent to a peer
-	PeerEventTypeMsgSend PeerEventType = "msgsend"
-
-	// PeerEventTypeMsgRecv is the type of event emitted when a
-	// message is received from a peer
-	PeerEventTypeMsgRecv PeerEventType = "msgrecv"
-)
-
-// PeerEvent is an event emitted when peers are either added or dropped from
-// a p2p.Server or when a message is sent or received on a peer connection
-type PeerEvent struct {
-	Type     PeerEventType   `json:"type"`
-	Peer     discover.NodeID `json:"peer"`
-	Error    string          `json:"error,omitempty"`
-	Protocol string          `json:"protocol,omitempty"`
-	MsgCode  *uint64         `json:"msg_code,omitempty"`
-	MsgSize  *uint32         `json:"msg_size,omitempty"`
-}
-
 // Peer represents a connected remote node.
 type Peer struct {
 	rw      *conn
@@ -106,9 +71,6 @@ type Peer struct {
 	protoErr chan error
 	closed   chan struct{}
 	disc     chan DiscReason
-
-	// events receives message send / receive events if set
-	events *event.Feed
 }
 
 // NewPeer returns a peer for testing purposes.
@@ -158,11 +120,6 @@ func (p *Peer) Disconnect(reason DiscReason) {
 // String implements fmt.Stringer.
 func (p *Peer) String() string {
 	return fmt.Sprintf("Peer %x %v", p.rw.id[:8], p.RemoteAddr())
-}
-
-// Inbound returns true if the peer is an inbound connection
-func (p *Peer) Inbound() bool {
-	return p.rw.flags&inboundConn != 0
 }
 
 func newPeer(conn *conn, protocols []Protocol) *Peer {
@@ -233,7 +190,7 @@ loop:
 }
 
 func (p *Peer) pingLoop() {
-	ping := time.NewTimer(pingInterval)
+	ping := time.NewTicker(pingInterval)
 	defer p.wg.Done()
 	defer ping.Stop()
 	for {
@@ -243,7 +200,6 @@ func (p *Peer) pingLoop() {
 				p.protoErr <- err
 				return
 			}
-			ping.Reset(pingInterval)
 		case <-p.closed:
 			return
 		}
@@ -340,13 +296,9 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 		proto.closed = p.closed
 		proto.wstart = writeStart
 		proto.werr = writeErr
-		var rw MsgReadWriter = proto
-		if p.events != nil {
-			rw = newMsgEventer(rw, p.events, p.ID(), proto.Name)
-		}
 		p.log.Trace(fmt.Sprintf("Starting protocol %s/%d", proto.Name, proto.Version))
 		go func() {
-			err := proto.Run(p, rw)
+			err := proto.Run(p, proto)
 			if err == nil {
 				p.log.Trace(fmt.Sprintf("Protocol %s/%d returned", proto.Name, proto.Version))
 				err = errProtocolReturned
@@ -419,9 +371,6 @@ type PeerInfo struct {
 	Network struct {
 		LocalAddress  string `json:"localAddress"`  // Local endpoint of the TCP data connection
 		RemoteAddress string `json:"remoteAddress"` // Remote endpoint of the TCP data connection
-		Inbound       bool   `json:"inbound"`
-		Trusted       bool   `json:"trusted"`
-		Static        bool   `json:"static"`
 	} `json:"network"`
 	Protocols map[string]interface{} `json:"protocols"` // Sub-protocol specific metadata fields
 }
@@ -442,9 +391,6 @@ func (p *Peer) Info() *PeerInfo {
 	}
 	info.Network.LocalAddress = p.LocalAddr().String()
 	info.Network.RemoteAddress = p.RemoteAddr().String()
-	info.Network.Inbound = p.rw.is(inboundConn)
-	info.Network.Trusted = p.rw.is(trustedConn)
-	info.Network.Static = p.rw.is(staticDialedConn)
 
 	// Gather all the running protocol infos
 	for _, proto := range p.running {

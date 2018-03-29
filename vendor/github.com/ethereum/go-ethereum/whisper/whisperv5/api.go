@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	ErrSymAsym              = errors.New("specify either a symmetric or an asymmetric key")
+	ErrSymAsym              = errors.New("specify either a symetric or a asymmetric key")
 	ErrInvalidSymmetricKey  = errors.New("invalid symmetric key")
 	ErrInvalidPublicKey     = errors.New("invalid public key")
 	ErrInvalidSigningPubKey = errors.New("invalid signing public key")
@@ -60,7 +60,30 @@ func NewPublicWhisperAPI(w *Whisper) *PublicWhisperAPI {
 		w:        w,
 		lastUsed: make(map[string]time.Time),
 	}
+
+	go api.run()
 	return api
+}
+
+// run the api event loop.
+// this loop deletes filter that have not been used within filterTimeout
+func (api *PublicWhisperAPI) run() {
+	timeout := time.NewTicker(2 * time.Minute)
+	for {
+		<-timeout.C
+
+		api.mu.Lock()
+		for id, lastUsed := range api.lastUsed {
+			if time.Since(lastUsed).Seconds() >= filterTimeout {
+				delete(api.lastUsed, id)
+				if err := api.w.Unsubscribe(id); err != nil {
+					log.Error("could not unsubscribe whisper filter", "error", err)
+				}
+				log.Debug("delete whisper filter (timeout)", "id", id)
+			}
+		}
+		api.mu.Unlock()
+	}
 }
 
 // Version returns the Whisper sub-protocol version.
@@ -81,7 +104,7 @@ func (api *PublicWhisperAPI) Info(ctx context.Context) Info {
 	stats := api.w.Stats()
 	return Info{
 		Memory:         stats.memoryUsed,
-		Messages:       len(api.w.messageQueue) + len(api.w.p2pMsgQueue),
+		Messages:        len(api.w.messageQueue) + len(api.w.p2pMsgQueue),
 		MinPow:         api.w.MinPow(),
 		MaxMessageSize: api.w.MaxMessageSize(),
 	}
@@ -220,7 +243,7 @@ func (api *PublicWhisperAPI) Post(ctx context.Context, req NewMessage) (bool, er
 		err         error
 	)
 
-	// user must specify either a symmetric or an asymmetric key
+	// user must specify either a symmetric or a asymmetric key
 	if (symKeyGiven && pubKeyGiven) || (!symKeyGiven && !pubKeyGiven) {
 		return false, ErrSymAsym
 	}
@@ -321,7 +344,7 @@ func (api *PublicWhisperAPI) Messages(ctx context.Context, crit Criteria) (*rpc.
 		return nil, rpc.ErrNotificationsUnsupported
 	}
 
-	// user must specify either a symmetric or an asymmetric key
+	// user must specify either a symmetric or a asymmetric key
 	if (symKeyGiven && pubKeyGiven) || (!symKeyGiven && !pubKeyGiven) {
 		return nil, ErrSymAsym
 	}
@@ -511,7 +534,7 @@ func (api *PublicWhisperAPI) NewMessageFilter(req Criteria) (string, error) {
 		err error
 	)
 
-	// user must specify either a symmetric or an asymmetric key
+	// user must specify either a symmetric or a asymmetric key
 	if (symKeyGiven && asymKeyGiven) || (!symKeyGiven && !asymKeyGiven) {
 		return "", ErrSymAsym
 	}
@@ -539,7 +562,7 @@ func (api *PublicWhisperAPI) NewMessageFilter(req Criteria) (string, error) {
 	}
 
 	if len(req.Topics) > 0 {
-		topics = make([][]byte, 0, len(req.Topics))
+		topics = make([][]byte, 1)
 		for _, topic := range req.Topics {
 			topics = append(topics, topic[:])
 		}
