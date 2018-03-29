@@ -212,7 +212,7 @@ func (app *EthermintApplication) Query(query abciTypes.RequestQuery) abciTypes.R
 	return abciTypes.ResponseQuery{Code: abciTypes.OK.Code, Value: bytes}
 }
 
-//-------------------------------------------------------
+// -------------------------------------------------------
 
 // validateTx checks the validity of a tx against the blockchain's current state.
 // it duplicates the logic in ethereum's tx_pool
@@ -263,7 +263,7 @@ func (app *EthermintApplication) validateTx(tx *ethTypes.Transaction) abciTypes.
 	if nonce != tx.Nonce() {
 		return abciTypes.ErrBadNonce.
 			AppendLog(fmt.Sprintf("Nonce not strictly increasing. Expected %d Got %d",
-				nonce, tx.Nonce()))
+			nonce, tx.Nonce()))
 	}
 
 	// Transactor should have enough funds to cover the costs
@@ -272,7 +272,7 @@ func (app *EthermintApplication) validateTx(tx *ethTypes.Transaction) abciTypes.
 	if currentBalance.Cmp(tx.Cost()) < 0 {
 		return abciTypes.ErrInsufficientFunds.
 			AppendLog(fmt.Sprintf("Current balance: %s, tx cost: %s",
-				currentBalance, tx.Cost()))
+			currentBalance, tx.Cost()))
 	}
 
 	intrGas := core.IntrinsicGas(tx.Data(), tx.To() == nil, true) // homestead == true

@@ -11,7 +11,7 @@ import (
 	rpcClient "github.com/tendermint/tendermint/rpc/lib/client"
 )
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 // Transactions sent via the go-ethereum rpc need to be routed to tendermint
 
 // listen for txs and forward to tendermint
@@ -45,7 +45,7 @@ func (b *Backend) BroadcastTx(tx *ethTypes.Transaction) error {
 	return err
 }
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 // wait for Tendermint to open the socket and run http endpoint
 
 func waitForServer(c rpcClient.HTTPClient) {

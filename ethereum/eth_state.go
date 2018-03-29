@@ -11,16 +11,16 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth"
-	//"github.com/ethereum/go-ethereum/log"
+	// "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/params"
 
 	abciTypes "github.com/tendermint/abci/types"
 
-	emtTypes "github.com/tendermint/ethermint/types"
+	emtTypes "ethermint/types"
 )
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 // EthState manages concurrent access to the intermediate workState object
 // The ethereum tx pool fires TxPreEvent in a go-routine,
 // and the miner subscribes to this in another go-routine and processes the tx onto
@@ -134,7 +134,7 @@ func (es *EthState) GasLimit() big.Int {
 	return big.Int(*es.work.gp)
 }
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 // Implements: miner.Pending API (our custom patch to go-ethereum)
 
 // Return a new block and a copy of the state from the latest work.
@@ -151,7 +151,7 @@ func (es *EthState) Pending() (*ethTypes.Block, *state.StateDB) {
 	), es.work.state.Copy()
 }
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 //
 
 // The work struct handles block processing.
@@ -258,7 +258,7 @@ func (ws *workState) updateHeaderWithTimeInfo(
 	ws.allLogs = make([]*ethTypes.Log, 0, numTx)
 }
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 
 // Create a new block header from the previous block.
 func newBlockHeader(receiver common.Address, prevBlock *ethTypes.Block) *ethTypes.Header {

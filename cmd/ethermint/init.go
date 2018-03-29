@@ -13,9 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/tendermint/ethermint/cmd/utils"
+	
+	"ethermint/cmd/utils"
 
-	emtUtils "github.com/tendermint/ethermint/cmd/utils"
+	emtUtils "ethermint/cmd/utils"
 )
 
 // nolint: gocyclo

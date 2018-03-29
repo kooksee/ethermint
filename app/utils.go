@@ -28,7 +28,7 @@ func decodeTx(txBytes []byte) (*types.Transaction, error) {
 	return tx, nil
 }
 
-//-------------------------------------------------------
+// -------------------------------------------------------
 // convenience methods for validators
 
 // Receiver returns the receiving address based on the selected strategy

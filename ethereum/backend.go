@@ -17,10 +17,10 @@ import (
 
 	rpcClient "github.com/tendermint/tendermint/rpc/lib/client"
 
-	emtTypes "github.com/tendermint/ethermint/types"
+	emtTypes "ethermint/types"
 )
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 // Backend manages the underlying ethereum state for storage and processing,
 // and maintains the connection to Tendermint for forwarding txs
 
@@ -87,7 +87,7 @@ func (b *Backend) Config() *eth.Config {
 	return b.ethConfig
 }
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 // Handle block processing
 
 // DeliverTx appends a transaction to the current block
@@ -127,7 +127,7 @@ func (b *Backend) GasLimit() big.Int {
 	return b.es.GasLimit()
 }
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 // Implements: node.Service
 
 // APIs returns the collection of RPC services the ethereum package offers.
@@ -174,7 +174,7 @@ func (b *Backend) Protocols() []p2p.Protocol {
 	return nil
 }
 
-//----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 // We need a block processor that just ignores PoW and uncles and so on
 
 // NullBlockProcessor does not validate anything

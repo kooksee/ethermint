@@ -23,8 +23,8 @@ import (
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/tendermint/ethermint/cmd/utils"
-	"github.com/tendermint/ethermint/ethereum"
+	"ethermint/cmd/utils"
+	"ethermint/ethereum"
 )
 
 var (
@@ -67,7 +67,7 @@ func generateKeyPair(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
 }
 
 func createTx(t *testing.T, key *ecdsa.PrivateKey, nonce uint64, to common.Address, amount,
-	gasLimit, gasPrice *big.Int, data []byte) *ethTypes.Transaction {
+gasLimit, gasPrice *big.Int, data []byte) *ethTypes.Transaction {
 
 	signer := ethTypes.HomesteadSigner{}
 
