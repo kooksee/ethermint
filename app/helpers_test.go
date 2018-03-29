@@ -72,7 +72,7 @@ gasLimit, gasPrice *big.Int, data []byte) *ethTypes.Transaction {
 	signer := ethTypes.HomesteadSigner{}
 
 	transaction, err := ethTypes.SignTx(
-		ethTypes.NewTransaction(nonce, to, amount, gasLimit, gasPrice, data),
+		ethTypes.NewTransaction(nonce, to, amount, gasLimit.Uint64(), gasPrice, data),
 		signer,
 		key,
 	)

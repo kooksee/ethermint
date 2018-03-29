@@ -253,7 +253,7 @@ func (app *EthermintApplication) validateTx(tx *ethTypes.Transaction) abciTypes.
 
 	// Check the transaction doesn't exceed the current block limit gas.
 	gasLimit := app.backend.GasLimit()
-	if gasLimit.Cmp(tx.Gas()) < 0 {
+	if gasLimit.Uint64() < tx.Gas() {
 		return abciTypes.ErrInternalError.
 			AppendLog(core.ErrGasLimitReached.Error())
 	}
@@ -275,8 +275,8 @@ func (app *EthermintApplication) validateTx(tx *ethTypes.Transaction) abciTypes.
 			currentBalance, tx.Cost()))
 	}
 
-	intrGas := core.IntrinsicGas(tx.Data(), tx.To() == nil, true) // homestead == true
-	if tx.Gas().Cmp(intrGas) < 0 {
+	intrGas, _ := core.IntrinsicGas(tx.Data(), tx.To() == nil, true) // homestead == true
+	if tx.Gas() < intrGas {
 		return abciTypes.ErrBaseInsufficientFees.
 			AppendLog(core.ErrIntrinsicGas.Error())
 	}
