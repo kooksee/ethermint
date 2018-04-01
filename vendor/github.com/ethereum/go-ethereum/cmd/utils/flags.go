@@ -40,7 +40,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/eth/gasprice"
 	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethstats"
+	// "github.com/ethereum/go-ethereum/ethstats"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/les"
 	"github.com/ethereum/go-ethereum/log"
@@ -1019,20 +1019,20 @@ func RegisterShhService(stack *node.Node, cfg *whisper.Config) {
 
 // RegisterEthStatsService configures the Ethereum Stats daemon and adds it to
 // th egiven node.
-func RegisterEthStatsService(stack *node.Node, url string) {
-	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		// Retrieve both eth and les services
-		var ethServ *eth.Ethereum
-		ctx.Service(&ethServ)
-
-		var lesServ *les.LightEthereum
-		ctx.Service(&lesServ)
-
-		return ethstats.New(url, ethServ, lesServ)
-	}); err != nil {
-		Fatalf("Failed to register the Ethereum Stats service: %v", err)
-	}
-}
+// func RegisterEthStatsService(stack *node.Node, url string) {
+// 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+// 		// Retrieve both eth and les services
+// 		var ethServ *eth.Ethereum
+// 		ctx.Service(&ethServ)
+//
+// 		var lesServ *les.LightEthereum
+// 		ctx.Service(&lesServ)
+//
+// 		return ethstats.New(url, ethServ, lesServ)
+// 	}); err != nil {
+// 		Fatalf("Failed to register the Ethereum Stats service: %v", err)
+// 	}
+// }
 
 // SetupNetwork configures the system for either the main net or some test network.
 func SetupNetwork(ctx *cli.Context) {
