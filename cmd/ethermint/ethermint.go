@@ -24,7 +24,7 @@ import (
 	"ethermint/ethereum"
 )
 
-func ethermintCmd(ctx *cli.Context) error {
+func EthermintCmd(ctx *cli.Context) error {
 	// Step 1: Setup the go-ethereum node and start it
 	node := emtUtils.MakeFullNode(ctx)
 	startNode(ctx, node)
@@ -74,7 +74,8 @@ func ethermintCmd(ctx *cli.Context) error {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	ethApp.SetLogger(emtUtils.EthermintLogger().With("module", "ethermint"))
+
+	// ethApp.SetLogger(emtUtils.EthermintLogger().With("module", "ethermint"))
 
 	// Start the app on the ABCI server
 	srv, err := server.NewServer(addr, abci, ethApp)
@@ -82,10 +83,9 @@ func ethermintCmd(ctx *cli.Context) error {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	// srv.SetLogger(emtUtils.EthermintLogger().With("module", "abci-server"))
 
-	srv.SetLogger(emtUtils.EthermintLogger().With("module", "abci-server"))
-
-	if _, err := srv.Start(); err != nil {
+	if err := srv.Start(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

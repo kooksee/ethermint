@@ -56,7 +56,7 @@ func (es *EthState) SetEthConfig(ethConfig *eth.Config) {
 }
 
 // Execute the transaction.
-func (es *EthState) DeliverTx(tx *ethTypes.Transaction) abciTypes.Result {
+func (es *EthState) DeliverTx(tx *ethTypes.Transaction) abciTypes.ResponseDeliverTx {
 	es.mtx.Lock()
 	defer es.mtx.Unlock()
 
@@ -122,7 +122,7 @@ func (es *EthState) resetWorkState(receiver common.Address) error {
 }
 
 func (es *EthState) UpdateHeaderWithTimeInfo(
-	config *params.ChainConfig, parentTime uint64, numTx uint64) {
+	config *params.ChainConfig, parentTime int64, numTx int32) {
 
 	es.mtx.Lock()
 	defer es.mtx.Unlock()
@@ -181,7 +181,7 @@ func (ws *workState) accumulateRewards(strategy *emtTypes.Strategy) {
 // and appends the tx, receipt, and logs.
 func (ws *workState) deliverTx(blockchain *core.BlockChain, config *eth.Config,
 	chainConfig *params.ChainConfig, blockHash common.Hash,
-	tx *ethTypes.Transaction) abciTypes.Result {
+	tx *ethTypes.Transaction) abciTypes.ResponseDeliverTx {
 
 	ws.state.Prepare(tx.Hash(), blockHash, ws.txIndex)
 	receipt, _, err := core.ApplyTransaction(
@@ -196,7 +196,7 @@ func (ws *workState) deliverTx(blockchain *core.BlockChain, config *eth.Config,
 		vm.Config{EnablePreimageRecording: config.EnablePreimageRecording},
 	)
 	if err != nil {
-		return abciTypes.ErrInternalError.AppendLog(err.Error())
+		return abciTypes.ResponseDeliverTx{Code: 2, Log: err.Error()}
 	}
 
 	logs := ws.state.GetLogs(tx.Hash())
@@ -208,7 +208,7 @@ func (ws *workState) deliverTx(blockchain *core.BlockChain, config *eth.Config,
 	ws.receipts = append(ws.receipts, receipt)
 	ws.allLogs = append(ws.allLogs, logs...)
 
-	return abciTypes.Result{Code: abciTypes.CodeType_OK}
+	return abciTypes.ResponseDeliverTx{Code: abciTypes.CodeTypeOK}
 }
 
 // Commit the ethereum state, update the header, make a new block and add it to
@@ -243,7 +243,7 @@ func (ws *workState) commit(blockchain *core.BlockChain, db ethdb.Database) (com
 }
 
 func (ws *workState) updateHeaderWithTimeInfo(
-	config *params.ChainConfig, parentTime uint64, numTx uint64) {
+	config *params.ChainConfig, parentTime int64, numTx int32) {
 
 	lastBlock := ws.parent
 	parentHeader := &ethTypes.Header{
@@ -251,8 +251,8 @@ func (ws *workState) updateHeaderWithTimeInfo(
 		Number:     lastBlock.Number(),
 		Time:       lastBlock.Time(),
 	}
-	ws.header.Time = new(big.Int).SetUint64(parentTime)
-	ws.header.Difficulty = ethash.CalcDifficulty(config, parentTime, parentHeader)
+	ws.header.Time = new(big.Int).SetInt64(parentTime)
+	ws.header.Difficulty = ethash.CalcDifficulty(config, uint64(parentTime), parentHeader)
 	ws.transactions = make([]*ethTypes.Transaction, 0, numTx)
 	ws.receipts = make([]*ethTypes.Receipt, 0, numTx)
 	ws.allLogs = make([]*ethTypes.Log, 0, numTx)

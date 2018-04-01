@@ -13,14 +13,14 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
-	
+
 	"ethermint/cmd/utils"
 
 	emtUtils "ethermint/cmd/utils"
 )
 
 // nolint: gocyclo
-func initCmd(ctx *cli.Context) error {
+func InitCmd(ctx *cli.Context) error {
 	genesisPath := ctx.Args().First()
 	genesis, err := emtUtils.ParseGenesisOrDefault(genesisPath)
 	if err != nil {

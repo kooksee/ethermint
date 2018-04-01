@@ -92,7 +92,7 @@ func (b *Backend) Config() *eth.Config {
 
 // DeliverTx appends a transaction to the current block
 // #stable
-func (b *Backend) DeliverTx(tx *ethTypes.Transaction) abciTypes.Result {
+func (b *Backend) DeliverTx(tx *ethTypes.Transaction) abciTypes.ResponseDeliverTx {
 	return b.es.DeliverTx(tx)
 }
 

@@ -64,11 +64,11 @@ var (
 )
 
 func init() {
-	app.Action = ethermintCmd
+	app.Action = EthermintCmd
 	app.HideVersion = true
 	app.Commands = []cli.Command{
 		{
-			Action:      initCmd,
+			Action:      InitCmd,
 			Name:        "init",
 			Usage:       "init genesis.json",
 			Description: "Initialize the files",
@@ -90,15 +90,15 @@ func init() {
 	app.Flags = append(app.Flags, rpcFlags...)
 	app.Flags = append(app.Flags, ethermintFlags...)
 
-	app.Before = func(ctx *cli.Context) error {
-		if err := utils.Setup(ctx); err != nil {
-			return err
-		}
-
-		ethUtils.SetupNetwork(ctx)
-
-		return nil
-	}
+	// app.Before = func(ctx *cli.Context) error {
+	// 	if err := utils.Setup(ctx); err != nil {
+	// 		return err
+	// 	}
+	//
+	// 	ethUtils.SetupNetwork(ctx)
+	//
+	// 	return nil
+	// }
 }
 
 func versionCmd(ctx *cli.Context) error {
